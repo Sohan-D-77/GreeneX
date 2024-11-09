@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "55442882141",
+    "project_id": "greenex-c6898",
+    "storage_bucket": "greenex-c6898.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:55442882141:android:a4cbeffa55214dfce197b4",
+        "android_client_info": {
+          "package_name": "com.innovatex.waste"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6IWR7DfioTvPyu4GxsLLu0aK0qFRnQEU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
