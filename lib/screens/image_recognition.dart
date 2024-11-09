@@ -1,141 +1,139 @@
 import 'package:flutter/material.dart';
-import 'package:chat_gpt_sdk/chat_gpt_sdk.dart';
-import '../consts.dart';
-import 'package:dash_chat_2/dash_chat_2.dart';
-import '../main.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import '../main.dart'; // Import your main.dart file to access MyApp
 
-class ChatbotScreen extends StatelessWidget {
-  final _openAI = OpenAI.instance.build(
-    token: OPENAI_API_KEY,
-    baseOption: HttpSetup(
-      receiveTimeout: const Duration(seconds: 5),
-    ),
-    enableLog: true,
-  );
+class ImageRecognitionScreen extends StatefulWidget {
+  @override
+  _ImageRecognitionScreenState createState() => _ImageRecognitionScreenState();
+}
 
-  final ChatUser _user = ChatUser(
-    id: '1',
-    firstName: 'Charles',
-    lastName: 'Leclerc',
-  );
+class _ImageRecognitionScreenState extends State<ImageRecognitionScreen> {
+  File? _image;
+  int _currentIndex = 0;
 
-  final ChatUser _gptChatUser = ChatUser(
-    id: '2',
-    firstName: 'Chat',
-    lastName: 'GPT',
-  );
-
-  final ValueNotifier<List<ChatMessage>> _messages = ValueNotifier([
-    ChatMessage(
-      text: 'Hey!',
-      user: ChatUser(
-        id: '1',
-        firstName: 'Charles',
-        lastName: 'Leclerc',
-      ),
-      createdAt: DateTime.now(),
-    )
-  ]);
-
-  final ValueNotifier<List<ChatUser>> _typingUsers = ValueNotifier([]);
-  final ValueNotifier<int> _currentIndex = ValueNotifier(0);
-
-  ChatbotScreen({Key? key}) : super(key: key);
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().getImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(0, 166, 126, 1),
-        title: const Text(
-          'GPT Chat',
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios, color: Colors.black),
+          onPressed: () {
+            Navigator.pop(context); // Goes back to the previous screen
+          },
+        ),
+        title: Text(
+          'Image Recognition',
           style: TextStyle(
-            color: Colors.white,
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Upload Image Section
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                      ),
+                    ],
+                  ),
+                  child: _image == null
+                      ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.cloud_upload, size: 60, color: Colors.grey),
+                      Text(
+                        'Tap to upload an image',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  )
+                      : Image.file(
+                    _image!,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+
+              SizedBox(height: 20),
+
+              // Analyze Button
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 15, horizontal: 50),
+                ),
+                onPressed: () {
+                  // Implement image recognition functionality here
+                },
+                child: Text(
+                  'Analyze Image',
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
+            ],
           ),
         ),
       ),
-      body: ValueListenableBuilder<List<ChatMessage>>(
-        valueListenable: _messages,
-        builder: (context, messages, _) {
-          return DashChat(
-            currentUser: _user,
-            messageOptions: const MessageOptions(
-              currentUserContainerColor: Colors.black,
-              containerColor: Color.fromRGBO(0, 166, 126, 1),
-              textColor: Colors.white,
-            ),
-            onSend: (ChatMessage m) {
-              _getChatResponse(m);
-            },
-            messages: messages,
-            typingUsers: _typingUsers.value,
-          );
+
+      // Bottom Navigation Bar
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.grey,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+            if (_currentIndex == 0) {
+              // Navigate to Main screen when Home is selected
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => MyApp()),
+              );
+            }
+          });
         },
-      ),
-      bottomNavigationBar: ValueListenableBuilder<int>(
-        valueListenable: _currentIndex,
-        builder: (context, currentIndex, _) {
-          return BottomNavigationBar(
-            currentIndex: currentIndex,
-            type: BottomNavigationBarType.fixed,
-            selectedItemColor: Colors.blue,
-            unselectedItemColor: Colors.grey,
-            onTap: (index) {
-              _currentIndex.value = index;
-              if (_currentIndex.value == 0) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => MyApp()),
-                );
-              }
-              // Handle other index cases as needed
-            },
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-              BottomNavigationBarItem(icon: Icon(Icons.location_on), label: 'Centers'),
-              BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: 'Grid'),
-              BottomNavigationBarItem(icon: Icon(Icons.gamepad), label: 'Games'),
-              BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: 'Shop'),
-            ],
-          );
-        },
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.location_on), label: 'Centers'),
+          BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: 'Grid'),
+          BottomNavigationBarItem(icon: Icon(Icons.gamepad), label: 'Games'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: 'Shop'),
+        ],
       ),
     );
-  }
-
-  Future<void> _getChatResponse(ChatMessage message) async {
-    _messages.value = List.from(_messages.value)..insert(0, message);
-    _typingUsers.value = List.from(_typingUsers.value)..add(_gptChatUser);
-
-    List<Map<String, dynamic>> messagesHistory = _messages.value.reversed.map((m) {
-      return (m.user == _user)
-          ? Messages(role: Role.user, content: m.text).toJson()
-          : Messages(role: Role.assistant, content: m.text).toJson();
-    }).toList();
-
-    final request = ChatCompleteText(
-      messages: messagesHistory,
-      maxToken: 200,
-      model: GptTurbo0301ChatModel(),
-    );
-    final response = await _openAI.onChatCompletion(request: request);
-
-    if (response != null) {
-      for (var element in response.choices) {
-        if (element.message != null) {
-          _messages.value = List.from(_messages.value)
-            ..insert(
-              0,
-              ChatMessage(
-                user: _gptChatUser,
-                createdAt: DateTime.now(),
-                text: element.message!.content,
-              ),
-            );
-        }
-      }
-    }
-
-    _typingUsers.value = List.from(_typingUsers.value)..remove(_gptChatUser);
   }
 }
